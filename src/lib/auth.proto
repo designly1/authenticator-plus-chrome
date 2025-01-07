@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package google.authenticator;
+
+message MigrationPayload {
+  repeated OtpParameters otpParameters = 1;
+
+  message OtpParameters {
+    bytes secret = 1;
+    string name = 2;
+    string issuer = 3;
+  }
+}

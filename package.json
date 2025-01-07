@@ -1,0 +1,32 @@
+{
+  "name": "authenticator-plus-chrome",
+  "version": "1.0.0",
+  "description": "Improved version of Authenticator for Chrome. Supports multi-account migration from Google Authenticator, camera scan, and marquee scan from web page. Accounts are encrypted and synced across devices.",
+  "license": "MIT",
+  "author": {
+    "name": "Jay Simons",
+    "url": "https://1337707.xyz"
+  },
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "watch": "webpack --config webpack.config.js --watch"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/plugin-transform-runtime": "^7.25.9",
+    "@babel/preset-env": "^7.26.0",
+    "babel-loader": "^9.2.1",
+    "css-loader": "^7.1.2",
+    "css-minimizer-webpack-plugin": "^7.0.0",
+    "glob": "^11.0.0",
+    "hi-base32": "^0.5.1",
+    "jsqr": "^1.4.0",
+    "mini-css-extract-plugin": "^2.9.2",
+    "sass": "^1.83.1",
+    "sass-loader": "^16.0.4",
+    "terser-webpack-plugin": "^5.3.11",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-remove-empty-scripts": "^1.0.4"
+  }
+}
