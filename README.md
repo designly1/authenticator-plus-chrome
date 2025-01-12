@@ -17,7 +17,7 @@ AuthenticatorPlus is an improvement over the original Authenticator Chrome exten
 
 ## Install
 
-djfsdhfk
+[https://chrome.google.com/webstore](https://chrome.google.com/webstore)
 
 ## Support / Website
 
