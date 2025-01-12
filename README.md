@@ -21,7 +21,7 @@ djfsdhfk
 
 ## Support / Website
 
-[https://designly1.github.io/authenticator-plus-chrome](https://designly1.github.io/authenticator-plus-chrome/)
+[https://bit.ly/authplus](https://bit.ly/authplus)
 
 ## Contributing
 
