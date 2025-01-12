@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>AuthenticatorPlus</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
+			rel="stylesheet"
+		/>
+
+		<style>
+			body {
+				font-family: 'Rubik', serif;
+				font-optical-sizing: auto;
+				font-weight: 400;
+				font-style: normal;
+			}
+
+			input {
+				height: 2.5rem;
+				border-width: 2px;
+				border-color: #a0aec0;
+			}
+
+			input:focus {
+				border-color: #5a67d8;
+				outline: none;
+			}
+		</style>
+	</head>
+	<body>
+		<main class="min-h-screen py-20">
+			<h1 class="text-4xl text-center">TOTP Generator</h1>
+			<div class="max-w-md mx-auto mt-10 p-5 border rounded-lg shadow-md">
+				<form id="totp-form" class="space-y-4">
+					<div>
+						<label for="name" class="block text-sm font-medium">Name</label>
+						<input
+							type="text"
+							id="name"
+							name="name"
+							class="mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm"
+							required
+						/>
+					</div>
+
+					<div>
+						<label for="issuer" class="block text-sm font-medium">Issuer</label>
+						<input
+							type="text"
+							id="issuer"
+							name="issuer"
+							class="mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm"
+							required
+						/>
+					</div>
+
+					<div>
+						<label for="secret" class="block text-sm font-medium">Secret</label>
+						<input
+							type="text"
+							id="secret"
+							name="secret"
+							class="mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 sm:text-sm"
+							readonly
+						/>
+					</div>
+
+					<div>
+						<button
+							type="button"
+							id="generate-btn"
+							class="w-full px-4 py-2 text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+						>
+							Generate Secret
+						</button>
+					</div>
+
+					<div class="mt-4">
+						<label for="qr-code" class="block text-sm font-medium">QR Code</label>
+						<div id="qr-code" class="mt-2"></div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script src="https://cdn.designly.biz/auth-plus/js/qrcode.min.js"></script>
+		<script>
+			// Base32 encoding function
+			function base32Encode(buffer) {
+				const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+				let bits = 0;
+				let value = 0;
+				let output = '';
+
+				const bytes = new Uint8Array(buffer);
+
+				for (let i = 0; i < bytes.length; i++) {
+					value = (value << 8) | bytes[i];
+					bits += 8;
+
+					while (bits >= 5) {
+						output += alphabet[(value >>> (bits - 5)) & 31];
+						bits -= 5;
+					}
+				}
+
+				if (bits > 0) {
+					output += alphabet[(value << (5 - bits)) & 31];
+				}
+
+				// Pad with '=' characters if necessary
+				while (output.length % 8 !== 0) {
+					output += '=';
+				}
+
+				return output;
+			}
+
+			const generateBtn = document.getElementById('generate-btn');
+			const secretField = document.getElementById('secret');
+			const qrCodeContainer = document.getElementById('qr-code');
+
+			generateBtn.addEventListener('click', () => {
+				const name = document.getElementById('name').value;
+				const issuer = document.getElementById('issuer').value;
+
+				// Generate 20 bytes of random data (160 bits as recommended for TOTP)
+				const array = new Uint8Array(20);
+				crypto.getRandomValues(array);
+
+				// Convert to Base32
+				const secret = base32Encode(array);
+				secretField.value = secret;
+
+				if (name && issuer) {
+					const otpAuthUrl = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(
+						name,
+					)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}`;
+
+					// Clear previous QR code and generate new one
+					qrCodeContainer.innerHTML = '';
+					new QRCode(qrCodeContainer, {
+						text: otpAuthUrl,
+						width: 256,
+						height: 256,
+						correctLevel: QRCode.CorrectLevel.H,
+					});
+				}
+			});
+		</script>
+	</body>
+</html>

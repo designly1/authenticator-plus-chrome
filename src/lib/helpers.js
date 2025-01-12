@@ -79,8 +79,27 @@ export async function parseOtpAuthUrl(url) {
 		if (url.startsWith('otpauth://totp/')) {
 			const params = new URL(url).searchParams;
 			const secret = params.get('secret');
+			// Get the part between 'totp/' and '?' directly using split
 			const label = decodeURIComponent(url.split('otpauth://totp/')[1].split('?')[0]);
-			return [{ secret, name: label }];
+
+			let name;
+			let issuer = params.get('issuer') || undefined;
+
+			// Split label into issuer and name parts
+			const labelParts = label.split(':');
+			if (labelParts.length === 2) {
+				const [labelIssuer, labelName] = labelParts;
+				name = labelName.trim();
+				// If issuer parameter matches label issuer, or if no issuer parameter exists
+				if (!issuer || labelIssuer === issuer) {
+					issuer = labelIssuer.trim();
+				}
+			} else {
+				// If no colon in label, use entire label as name
+				name = label.trim();
+			}
+
+			return [{ secret, name, issuer }];
 		} else if (url.startsWith('otpauth-migration://')) {
 			const params = new URL(url).searchParams;
 			const data = params.get('data');
@@ -92,10 +111,10 @@ export async function parseOtpAuthUrl(url) {
 			return [];
 		}
 	} catch (error) {
+		console.error('Error parsing URL:', error);
 		return [];
 	}
 }
-
 /**
  * Generates a random string of alphanumeric characters
  * @param {number} length - The length of the random string to generate

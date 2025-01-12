@@ -186,8 +186,9 @@ input {
         }
 
         &-totp {
-            font-size: x-large;
-            font-weight: 500;
+            font-size: xx-large !important;
+            font-weight: 500 !important;
+            color: #1c50b1
         }
     }
 }
