@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<!-- 
+Title: AuthenticatorPlus
+Author: Jay Simons
+Website: https://1337707.xyz
+Email: jay@designly.biz
+(C) 2025
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+
+<html>
+	<head>
+		<title>AuthenticatorPlus</title>
+		<link rel="stylesheet" href="../css/styles.css" />
+	</head>
+	<body>
+		<main>
+			<header class="small">
+				<img src="../assets/icon48.png" alt="AuthenticatorPlus Icon" />
+				<p>AuthenticatorPlus</p>
+			</header>
+			<div id="container" style="margin-top: 20px">
+				<!-- Buttons for camera, marquee, etc. -->
+				<div class="button-row">
+					<button id="add-camera">
+						<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+							<g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+							<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+							<g id="SVGRepo_iconCarrier">
+								<path
+									d="M20,10.5a1,1,0,0,0-1,1v7a1,1,0,0,1-1,1H4a1,1,0,0,1-1-1v-8a1,1,0,0,1,1-1H6a1,1,0,0,0,1-.68l.54-1.64a1,1,0,0,1,.95-.68H14a1,1,0,0,0,0-2H8.44A3,3,0,0,0,5.6,6.55l-.32,1H4a3,3,0,0,0-3,3v8a3,3,0,0,0,3,3H18a3,3,0,0,0,3-3v-7A1,1,0,0,0,20,10.5Zm-9-1a4,4,0,1,0,4,4A4,4,0,0,0,11,9.5Zm0,6a2,2,0,1,1,2-2A2,2,0,0,1,11,15.5Zm11-11H21v-1a1,1,0,0,0-2,0v1H18a1,1,0,0,0,0,2h1v1a1,1,0,0,0,2,0v-1h1a1,1,0,0,0,0-2Z"
+								></path>
+							</g>
+						</svg>
+					</button>
+					<button id="marquee">
+						<svg
+							viewBox="0 0 24 24"
+							xmlns="http://www.w3.org/2000/svg"
+							fill="#320fb1"
+							width="38"
+							height="38"
+						>
+							<g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+							<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+							<g id="SVGRepo_iconCarrier">
+								<path
+									d="M4 20v1H2v-2h1v1zM3 3h1V2H2v2h1zM2 8h1V6H2zm0 5h1v-3H2zm18-5h1V6h-1zm0 4h1v-2h-1zM2 17h1v-2H2zM8 3V2H6v1zm5 0V2h-3v1zM9 21v-1H7v1zm4 0v-1h-2v1zm4-18V2h-2v1zm2-1v1h1v1h1V2zm-.245 20l2.686-1.351L19.126 16H23l-9-6.538v11.103l2.382-3.264zm-2.217-6.61L15 17.499v-6.073L19.922 15h-2.41l2.59 5.203-.905.455z"
+								></path>
+								<path fill="none" d="M0 0h24v24H0z"></path>
+							</g>
+						</svg>
+					</button>
+					<button id="options-btn" style="margin-left: auto">
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							xmlns="http://www.w3.org/2000/svg"
+							width="32"
+							height="32"
+						>
+							<g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+							<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+							<g id="SVGRepo_iconCarrier">
+								<path
+									fill-rule="evenodd"
+									clip-rule="evenodd"
+									d="M12.7848 0.449982C13.8239 0.449982 14.7167 1.16546 14.9122 2.15495L14.9991 2.59495C15.3408 4.32442 17.1859 5.35722 18.9016 4.7794L19.3383 4.63233C20.3199 4.30175 21.4054 4.69358 21.9249 5.56605L22.7097 6.88386C23.2293 7.75636 23.0365 8.86366 22.2504 9.52253L21.9008 9.81555C20.5267 10.9672 20.5267 13.0328 21.9008 14.1844L22.2504 14.4774C23.0365 15.1363 23.2293 16.2436 22.7097 17.1161L21.925 18.4339C21.4054 19.3064 20.3199 19.6982 19.3382 19.3676L18.9017 19.2205C17.1859 18.6426 15.3408 19.6754 14.9991 21.405L14.9122 21.845C14.7167 22.8345 13.8239 23.55 12.7848 23.55H11.2152C10.1761 23.55 9.28331 22.8345 9.08781 21.8451L9.00082 21.4048C8.65909 19.6754 6.81395 18.6426 5.09822 19.2205L4.66179 19.3675C3.68016 19.6982 2.59465 19.3063 2.07505 18.4338L1.2903 17.1161C0.770719 16.2436 0.963446 15.1363 1.74956 14.4774L2.09922 14.1844C3.47324 13.0327 3.47324 10.9672 2.09922 9.8156L1.74956 9.52254C0.963446 8.86366 0.77072 7.75638 1.2903 6.8839L2.07508 5.56608C2.59466 4.69359 3.68014 4.30176 4.66176 4.63236L5.09831 4.77939C6.81401 5.35722 8.65909 4.32449 9.00082 2.59506L9.0878 2.15487C9.28331 1.16542 10.176 0.449982 11.2152 0.449982H12.7848ZM12 15.3C13.8225 15.3 15.3 13.8225 15.3 12C15.3 10.1774 13.8225 8.69998 12 8.69998C10.1774 8.69998 8.69997 10.1774 8.69997 12C8.69997 13.8225 10.1774 15.3 12 15.3Z"
+									fill="#242424"
+								></path>
+							</g>
+						</svg>
+					</button>
+				</div>
+
+				<!-- This is where we display the TOTP accounts -->
+				<div id="account-group">
+					<p id="accounts-hint">Click an account item to copy its value</p>
+					<div id="accounts" class="show">
+						<p id="no-accounts" class="hidden">No accounts added yet</p>
+					</div>
+				</div>
+
+				<!-- QR code reader container -->
+				<div id="qr-reader"></div>
+			</div>
+
+			<template id="locked-template">
+				<div class="locked-account">
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+						<g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+						<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+						<g id="SVGRepo_iconCarrier">
+							<path
+								d="M16 10V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V10M12 14V17M18 15C18 18.3137 15.3137 21 12 21C8.68629 21 6 18.3137 6 15C6 11.6863 8.68629 9 12 9C15.3137 9 18 11.6863 18 15ZM13 14C13 14.5523 12.5523 15 12 15C11.4477 15 11 14.5523 11 14C11 13.4477 11.4477 13 12 13C12.5523 13 13 13.4477 13 14Z"
+								stroke="#ffffff"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							></path>
+						</g>
+					</svg>
+					<p>Incorrect encryption password set</p>
+				</div>
+			</template>
+
+			<!-- Template for each TOTP account row -->
+			<template id="account-template">
+				<div class="account-item">
+					<div class="account-item-details">
+						<span class="account-item-details-issuer"></span>
+						<span class="account-item-details-totp"></span>
+						<span class="account-item-details-name"></span>
+					</div>
+					<svg class="pie-svg" width="40" height="40" viewBox="0 0 100 100">
+						<path class="pie-sector" d="M50,50 Z" />
+					</svg>
+					<div class="account-item-is-copied hidden">
+						<p>Copied!</p>
+					</div>
+				</div>
+			</template>
+
+			<!-- Modals -->
+			<div id="error-modal">
+				<pre id="error-message"></pre>
+				<button class="btn btn-primary" id="close-error">OK</button>
+			</div>
+
+			<div id="account-added-modal">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+					<g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+					<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+					<g id="SVGRepo_iconCarrier">
+						<path
+							fill-rule="evenodd"
+							clip-rule="evenodd"
+							d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12ZM15.7071 9.29289C16.0976 9.68342 16.0976 10.3166 15.7071 10.7071L12.0243 14.3899C11.4586 14.9556 10.5414 14.9556 9.97568 14.3899L8.29289 12.7071C7.90237 12.3166 7.90237 11.6834 8.29289 11.2929C8.68342 10.9024 9.31658 10.9024 9.70711 11.2929L11 12.5858L14.2929 9.29289C14.6834 8.90237 15.3166 8.90237 15.7071 9.29289Z"
+							fill="#ffffff"
+						></path>
+					</g>
+				</svg>
+				<p>Account added!</p>
+			</div>
+		</main>
+		<!-- Load vendor scripts -->
+		<script src="../vendor/buffer.js"></script>
+		<script src="../vendor/otplib.js"></script>
+		<script src="../vendor/html5-qrcode.min.js"></script>
+
+		<!-- Main popup script -->
+		<script src="../js/popup.bundle.js"></script>
+	</body>
+</html>

@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts');
 const TerserPlugin = require('terser-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 
 const jsConfig = {
 	mode: 'production',
@@ -61,11 +62,9 @@ const withOptimization = Object.assign({}, jsConfig, {
 						passes: 2,
 					},
 					mangle: {
-						// Prevent mangling of chrome APIs
 						reserved: ['chrome'],
 					},
 					format: {
-						// Preserve comments with @preserve or @license
 						comments: /@preserve|@license|@cc_on/i,
 					},
 				},
@@ -114,4 +113,43 @@ const cssConfig = {
 	},
 };
 
-module.exports = [withOptimization, cssConfig];
+const copyConfig = {
+	mode: 'production',
+	entry: {}, // Empty entry point
+	output: {
+		path: path.resolve(__dirname, 'dist'),
+	},
+	performance: {
+		maxAssetSize: 10000000,
+		maxEntrypointSize: 10000000,
+		hints: 'warning',
+	},
+	plugins: [
+		new CopyPlugin({
+			patterns: [
+				{
+					from: path.resolve(__dirname, 'src/assets'),
+					to: path.resolve(__dirname, 'dist/assets'),
+				},
+				{
+					from: path.resolve(__dirname, 'src/vendor'),
+					to: path.resolve(__dirname, 'dist/vendor'),
+				},
+				{
+					from: path.resolve(__dirname, 'src/html'),
+					to: path.resolve(__dirname, 'dist/html'),
+				},
+				{
+					from: path.resolve(__dirname, 'src/sw.js'),
+					to: path.resolve(__dirname, 'dist/sw.js'),
+				},
+				{
+					from: path.resolve(__dirname, 'src/manifest.json'),
+					to: path.resolve(__dirname, 'dist/manifest.json'),
+				},
+			],
+		}),
+	],
+};
+
+module.exports = [withOptimization, cssConfig, copyConfig];
