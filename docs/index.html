@@ -237,6 +237,17 @@
 					>
 				</div>
 			</section>
+			<footer style="margin-top: 40px; display: flex; justify-content: center">
+				<p>
+					&copy; <span id="cr-date"></span>
+					<a class="link" href="https://1337707.xyz" target="_blank" rel="noopener noreferrer"
+						>Jay Simons</a
+					>
+				</p>
+			</footer>
 		</main>
+		<script>
+			document.getElementById('cr-date').textContent = new Date().getFullYear();
+		</script>
 	</body>
 </html>
