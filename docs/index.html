@@ -59,6 +59,19 @@
 			#demo-video {
 				width: 100%;
 			}
+
+			#comments {
+				margin: 40px auto;
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				gap: 40px;
+			}
+
+			#comments h2 {
+				text-align: center;
+				font-size: xx-large;
+			}
 		</style>
 	</head>
 	<body>
@@ -316,14 +329,10 @@
 						Donate</a
 					>
 				</div>
-				<a
-					class="btn btn-primary btn-fit"
-					style="margin: 0 auto"
-					href="generator.html"
-					target="_blank"
-					rel="noopener noreferrer"
-					>TOTP Generator</a
-				>
+				<div id="comments">
+					<h2>Suggestions? Comments? Questions?</h2>
+					<div id="disqus_thread"></div>
+				</div>
 			</section>
 			<footer style="margin-top: 40px; display: flex; justify-content: center">
 				<p>
@@ -349,6 +358,14 @@
 				const video = document.getElementById('demo-video');
 				video.play();
 			}
+
+			(function () {
+				var d = document,
+					s = d.createElement('script');
+				s.src = 'https://authplus.disqus.com/embed.js';
+				s.setAttribute('data-timestamp', +new Date());
+				(d.head || d.body).appendChild(s);
+			})();
 		</script>
 	</body>
 </html>
