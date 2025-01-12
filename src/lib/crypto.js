@@ -198,7 +198,6 @@ export async function secureGetAll() {
 						const value = await decryptData(encrypted, data.iv);
 						decryptedItems[key] = value;
 					} catch (error) {
-						console.error(`Failed to decrypt key "${key}":`, error.message);
 						decryptedItems[key] = null;
 					}
 				} else {

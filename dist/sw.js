@@ -53,7 +53,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		}
 
 		case 'TRIG_CAPTURE_QR_CODE': {
-			console.log('Background script received TRIG_CAPTURE_QR_CODE');
 			chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
 				if (tabs.length === 0) {
 					sendResponse({ success: false, error: 'No active tab found.' });

@@ -25,18 +25,22 @@
  */
 
 import { parseOtpAuthUrl, saveAccounts } from '@lib/helpers.js';
-import { secureGetAll } from '@lib/crypto.js';
+import { secureGetAll, passwordIsSet } from '@lib/crypto.js';
 
 /** Time constants in milliseconds */
 const TOTAL_TIME = 30;
 const INTERVAL = 1000;
 const EXPIRE_THRESHOLD = 5;
 
+/** Special identifier for locked accounts */
+const LOCKED_ACCOUNT_ID = 'locked-account';
+
 /** DOM element references */
 const accountsContainer = document.getElementById('accounts');
 const addCameraBtn = document.getElementById('add-camera');
 const marqueeBtn = document.getElementById('marquee');
 const noAccountsEl = document.getElementById('no-accounts');
+const accountAddedModal = document.getElementById('account-added-modal');
 
 /** State variables */
 let cachedAccounts = [];
@@ -133,13 +137,26 @@ function createAccountElement(account) {
 
 	return {
 		container: element,
-		nameEl: element.querySelector('.account-name'),
-		issuerEl: element.querySelector('.account-issuer'),
-		totpEl: element.querySelector('.account-totp'),
+		nameEl: element.querySelector('.account-item-details-name'),
+		issuerEl: element.querySelector('.account-item-details-issuer'),
+		totpEl: element.querySelector('.account-item-details-totp'),
 		pathEl: element.querySelector('.pie-sector'),
 		copiedEl: element.querySelector('.account-item-is-copied'),
 		currentAngle: 360,
 	};
+}
+
+/**
+ * Creates DOM elements for displaying an account
+ * @param {Object} account - The account object
+ * @returns {Object} Object containing references to created DOM elements and state
+ */
+function createLockedAccountElement() {
+	const template = document.getElementById('locked-template');
+	const clone = template.content.cloneNode(true);
+	const element = document.createElement('div');
+	element.appendChild(clone);
+	return { container: element };
 }
 
 /**
@@ -177,6 +194,11 @@ async function syncCachedAccounts() {
 	cachedAccounts = Object.values(decryptedAccounts) || [];
 }
 
+/**
+ * Refreshes the accounts list from storage
+ * @returns {Promise<void>} A promise that resolves when the accounts are refreshed
+ * @async
+ */
 async function refreshAccounts() {
 	await syncCachedAccounts();
 	updateAccountsList();
@@ -193,19 +215,51 @@ async function updateAccountsList() {
 	}
 	noAccountsEl.classList.toggle('hidden', cachedAccounts.length > 0);
 
-	const currentSecrets = new Set(cachedAccounts.map(a => a.secret));
+	// Create a set of current valid secrets and track null account indices
+	const currentSecrets = new Set();
+	const nullAccountIndices = new Set();
 
-	for (const [secret, state] of accountElements) {
-		if (!currentSecrets.has(secret)) {
+	for (let i = 0; i < cachedAccounts.length; i++) {
+		const account = cachedAccounts[i];
+		if (account) {
+			currentSecrets.add(account.secret);
+		} else {
+			nullAccountIndices.add(`locked-account-${i}`);
+		}
+	}
+
+	// Clean up old elements
+	for (const [id, state] of accountElements) {
+		if (id.startsWith('locked-account-')) {
+			if (!nullAccountIndices.has(id)) {
+				state.container.remove();
+				accountElements.delete(id);
+			}
+		} else if (!currentSecrets.has(id)) {
 			state.container.remove();
 			if (state.animationFrame) {
 				cancelAnimationFrame(state.animationFrame);
 			}
-			accountElements.delete(secret);
+			accountElements.delete(id);
 		}
 	}
 
-	for (const account of cachedAccounts) {
+	// Process all accounts (both valid and null)
+	for (let i = 0; i < cachedAccounts.length; i++) {
+		const account = cachedAccounts[i];
+
+		if (!account) {
+			// Handle null account
+			const lockedId = `locked-account-${i}`;
+			if (!accountElements.has(lockedId)) {
+				const lockedState = createLockedAccountElement();
+				accountElements.set(lockedId, lockedState);
+				accountsContainer.appendChild(lockedState.container);
+			}
+			continue;
+		}
+
+		// Handle regular account
 		let state = accountElements.get(account.secret);
 		if (!state) {
 			state = createAccountElement(account);
@@ -248,8 +302,13 @@ async function updateAccountsList() {
 // Event Listeners
 addCameraBtn.addEventListener('click', async () => {
 	clearErrorMessage();
-
 	hideAccountsContainer();
+
+	const passVal = await passwordIsSet();
+	if (!passVal) {
+		setErrorMessage('Please set a password in the options page.');
+		return;
+	}
 
 	if (cameraIsOn) {
 		html5QrCode.stop();
@@ -276,6 +335,10 @@ addCameraBtn.addEventListener('click', async () => {
 			showAccountsContainer();
 			cameraIsOn = false;
 			addCameraBtn.classList.remove('active');
+			accountAddedModal.classList.add('show');
+			setTimeout(() => {
+				accountAddedModal.classList.remove('show');
+			}, 1000);
 		})
 		.catch(e => {
 			cameraIsOn = false;
@@ -288,9 +351,16 @@ addCameraBtn.addEventListener('click', async () => {
 		});
 });
 
-marqueeBtn.addEventListener('click', e => {
+marqueeBtn.addEventListener('click', async e => {
 	e.stopPropagation();
 	clearErrorMessage();
+
+	const passVal = await passwordIsSet();
+	if (!passVal) {
+		setErrorMessage('Please set a password in the options page.');
+		return;
+	}
+
 	chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
 		if (tabs.length === 0) return;
 

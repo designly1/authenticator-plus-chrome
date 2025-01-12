@@ -76,7 +76,7 @@ export function marquee() {
 		justifyContent: 'center',
 		alignItems: 'center',
 		gap: '20px',
-		maxWidth: '400px',
+		maxWidth: '600px',
 	});
 
 	const marqueeGif = new Image();

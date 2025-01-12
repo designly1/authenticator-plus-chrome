@@ -25,6 +25,8 @@
  */
 
 import { secureGetAll, secureDelete, setPassword, passwordIsSet } from '@lib/crypto';
+import { passwordSettings } from '../constants/password';
+import generatePassword from '../lib/generate-password';
 
 const accountsList = document.getElementById('accounts-list');
 const clearAccountsBtn = document.getElementById('clear-accounts');
@@ -35,11 +37,18 @@ const requestCameraBtn = document.getElementById('req-camera-btn');
 const requestCameraContainer = document.getElementById('req-camera');
 const reqCameraMessage = document.getElementById('req-camera-message');
 const camAccessGranted = document.getElementById('cam-access-granted');
-const passwordForm = document.getElementById('password-form');
+const passwordFormContainer = document.getElementById('password-form-container');
 const passwordInput = document.getElementById('password');
 const passwordSubmit = document.getElementById('submit-password');
+const generatePasswordBtn = document.getElementById('generate-password');
 const passwordIsSetContainer = document.getElementById('password-is-set');
 const changePasswordBtn = document.getElementById('change-password-btn');
+const introContainer = document.getElementById('intro');
+const introCloseBtn = document.getElementById('intro-close-btn');
+const helpBtn = document.getElementById('help-btn');
+const qrCodeModal = document.getElementById('qr-code-modal');
+const qrCode = document.getElementById('qr-code');
+const closeQrCodeBtn = document.getElementById('close-qr-code-btn');
 
 const defaultReqCameraMessage = reqCameraMessage.textContent;
 
@@ -50,23 +59,34 @@ async function loadAccounts() {
 		// Clear and rebuild the accounts list
 		accountsList.innerHTML = '';
 
+		if (Object.keys(decryptedData).length === 0) {
+			accountsList.innerHTML = '<p id="accounts-list-none">No accounts added yet.</p>';
+			return;
+		}
+
 		for (const [key, account] of Object.entries(decryptedData)) {
 			const clone = accountTemplate.content.cloneNode(true);
 			const span = clone.querySelector('span');
-			const button = clone.querySelector('button.delete-account');
+			const deleteButton = clone.querySelector('button.delete-account');
+			const qrButton = clone.querySelector('button.show-qr');
 
-			span.textContent = account.name;
-			button.dataset.key = key;
-			button.dataset.name = account.name;
+			span.textContent = `[${account.issuer || 'No issuer'}] ${account.name}`;
+			deleteButton.dataset.key = key;
+			deleteButton.dataset.name = account.name;
+			qrButton.dataset.key = key;
+			qrButton.dataset.name = account.name;
+			qrButton.dataset.secret = account.secret;
+			qrButton.dataset.issuer = account.issuer;
 
 			accountsList.appendChild(clone);
 		}
 
 		bindDeleteButtons();
+		bindShowQrButtons();
 	} catch (error) {
 		console.error('Failed to load accounts:', error);
 		accountsList.innerHTML =
-			'<p class="error">Failed to load accounts. Please check your encryption password.</p>';
+			'<p class="failed-account-error">Failed to load accounts. Please check your encryption password.</p>';
 	}
 }
 
@@ -75,6 +95,33 @@ function bindDeleteButtons() {
 		btn.addEventListener('click', confirmDeleteAccount);
 	});
 }
+
+function bindShowQrButtons() {
+	document.querySelectorAll('button.show-qr').forEach(btn => {
+		btn.addEventListener('click', showQrCode);
+	});
+}
+
+const qr = new QRCode(qrCode);
+
+async function showQrCode(event) {
+	const button = event.target.closest('button.show-qr');
+	if (!button) return;
+
+	const secret = button.dataset.secret;
+	const issuer = button.dataset.issuer;
+	const name = button.dataset.name;
+
+	const otpauth = `otpauth://totp/${issuer}:${name}?secret=${secret}&issuer=${issuer}`;
+
+	qr.clear();
+	qr.makeCode(otpauth);
+	qrCodeModal.classList.remove('hidden');
+}
+
+closeQrCodeBtn.addEventListener('click', () => {
+	qrCodeModal.classList.add('hidden');
+});
 
 async function confirmDeleteAccount(event) {
 	const button = event.target.closest('button.delete-account');
@@ -122,7 +169,7 @@ const confirmChangePassword = async () => {
 	const message =
 		'Are you sure you want to change your password? If you do, your current accounts will be unreadable.';
 	if (confirm(message)) {
-		passwordForm.classList.remove('hidden');
+		passwordFormContainer.classList.remove('hidden');
 		passwordIsSetContainer.classList.add('hidden');
 	}
 };
@@ -192,9 +239,18 @@ requestCameraBtn.addEventListener('click', async () => {
 
 passwordSubmit.addEventListener('click', async () => {
 	const password = passwordInput.value;
+	let passwordScore = 0;
 
 	if (!password) {
 		alert('Please enter a password.');
+		return;
+	}
+
+	const passwordScoreInput = document.getElementById('password-score');
+	passwordScore = parseInt(passwordScoreInput.value, 10);
+
+	if (passwordScore < passwordSettings.minScore) {
+		alert('Password is too weak. Please try again.');
 		return;
 	}
 
@@ -203,14 +259,42 @@ passwordSubmit.addEventListener('click', async () => {
 		await loadAccounts();
 		passwordInput.value = '';
 		passwordIsSetContainer.classList.remove('hidden');
-		passwordForm.classList.add('hidden');
+		passwordFormContainer.classList.add('hidden');
 	} catch (error) {
 		console.error('Failed to set password:', error);
 		alert('Failed to set password. Please try again.');
 	}
 });
 
+generatePasswordBtn.addEventListener('click', () => {
+	const password = generatePassword();
+	passwordInput.value = password;
+	// set password type to text to show the generated password
+	passwordInput.type = 'text';
+	// trigger password strength check
+	passwordInput.dispatchEvent(new Event('input'));
+});
+
+async function checkIntroShown() {
+	const val = await chrome.storage.local.get('introShown');
+	if (val.introShown) {
+		introContainer.classList.add('hidden');
+	} else {
+		introContainer.classList.remove('hidden');
+	}
+}
+
+introCloseBtn.addEventListener('click', () => {
+	introContainer.classList.add('hidden');
+	chrome.storage.local.set({ introShown: true });
+});
+
+helpBtn.addEventListener('click', () => {
+	introContainer.classList.remove('hidden');
+});
+
 // Initial load
+checkIntroShown();
 loadAccounts();
 checkCameraAccess();
 
@@ -218,9 +302,9 @@ checkCameraAccess();
 passwordIsSet().then(isSet => {
 	if (isSet) {
 		passwordIsSetContainer.classList.remove('hidden');
-		passwordForm.classList.add('hidden');
+		passwordFormContainer.classList.add('hidden');
 	} else {
 		passwordIsSetContainer.classList.add('hidden');
-		passwordForm.classList.remove('hidden');
+		passwordFormContainer.classList.remove('hidden');
 	}
 });
