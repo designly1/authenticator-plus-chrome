@@ -15,6 +15,10 @@ AuthenticatorPlus is an improvement over the original Authenticator Chrome exten
 - Grant camera access
 - Add your TOTP secrets
 
+## Install
+
+djfsdhfk
+
 ## Support / Website
 
 [https://designly1.github.io/authenticator-plus-chrome](https://designly1.github.io/authenticator-plus-chrome/)
