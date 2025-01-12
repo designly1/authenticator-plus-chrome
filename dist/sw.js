@@ -26,32 +26,6 @@
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	switch (message.type) {
-		case 'GET_MARQUEE_IMAGE': {
-			const imageUrl = chrome.runtime.getURL('assets/marquee.gif');
-			fetch(imageUrl)
-				.then(response => {
-					if (!response.ok) {
-						throw new Error(`HTTP error! status: ${response.status}`);
-					}
-					return response.blob();
-				})
-				.then(blob => {
-					const reader = new FileReader();
-					reader.onloadend = () => {
-						sendResponse({ success: true, imageData: reader.result });
-					};
-					reader.onerror = () => {
-						sendResponse({ success: false, error: 'Failed to read image data' });
-					};
-					reader.readAsDataURL(blob);
-				})
-				.catch(error => {
-					console.error('Error loading marquee image:', error);
-					sendResponse({ success: false, error: error.message });
-				});
-			return true;
-		}
-
 		case 'TRIG_CAPTURE_QR_CODE': {
 			chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
 				if (tabs.length === 0) {

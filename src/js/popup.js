@@ -370,14 +370,21 @@ marqueeBtn.addEventListener('click', async e => {
 			return;
 		}
 
-		chrome.runtime.sendMessage({ type: 'TRIG_CAPTURE_QR_CODE' }, response => {
-			if (chrome.runtime.lastError) {
-				console.error(chrome.runtime.lastError);
-				setErrorMessage('Failed to communicate with background script');
-				return;
-			}
-			window.close();
-		});
+		chrome.scripting
+			.executeScript({
+				target: { tabId: activeTab.id },
+				files: ['js/content.bundle.js'],
+			})
+			.then(() => {
+				chrome.runtime.sendMessage({ type: 'TRIG_CAPTURE_QR_CODE' }, response => {
+					if (chrome.runtime.lastError) {
+						console.error(chrome.runtime.lastError);
+						setErrorMessage('Failed to communicate with background script');
+						return;
+					}
+					window.close();
+				});
+			});
 	});
 });
 

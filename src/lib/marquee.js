@@ -31,6 +31,7 @@
 
 import jsQR from 'jsqr';
 import { parseOtpAuthUrl, saveAccounts } from './helpers';
+import { marqueeImgUri } from '../constants/imageData';
 
 export function marquee() {
 	// Check for existing overlay first
@@ -80,31 +81,11 @@ export function marquee() {
 	});
 
 	const marqueeGif = new Image();
-
-	// Request the image from the background script
-	chrome.runtime.sendMessage({ type: 'GET_MARQUEE_IMAGE' }, response => {
-		if (chrome.runtime.lastError) {
-			console.error('Failed to get marquee image:', chrome.runtime.lastError);
-			return;
-		}
-
-		if (response && response.imageData) {
-			Object.assign(marqueeGif.style, {
-				width: '100%',
-			});
-
-			marqueeGif.onload = () => {
-				container.innerHTML = '';
-				centerContainer.appendChild(marqueeGif);
-			};
-
-			marqueeGif.onerror = () => {
-				console.error('Failed to load marquee image data');
-			};
-
-			marqueeGif.src = response.imageData;
-		}
+	marqueeGif.src = marqueeImgUri;
+	Object.assign(marqueeGif.style, {
+		width: '100%',
 	});
+	centerContainer.appendChild(marqueeGif);
 
 	const instructions = document.createElement('div');
 	Object.assign(instructions.style, {
