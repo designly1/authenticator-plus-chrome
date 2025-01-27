@@ -49,6 +49,8 @@ const helpBtn = document.getElementById('help-btn');
 const qrCodeModal = document.getElementById('qr-code-modal');
 const qrCode = document.getElementById('qr-code');
 const closeQrCodeBtn = document.getElementById('close-qr-code-btn');
+const restoreBtn = document.getElementById('options-restore-btn');
+const backupBtn = document.getElementById('options-backup-btn');
 
 const defaultReqCameraMessage = reqCameraMessage.textContent;
 
@@ -101,6 +103,58 @@ function bindShowQrButtons() {
 		btn.addEventListener('click', showQrCode);
 	});
 }
+
+function backupData() {
+	chrome.storage.sync.get(null, items => {
+		const data = JSON.stringify(items);
+		const blob = new Blob([data], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		const date = new Date()
+			.toLocaleString('en-US', {
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit',
+				second: '2-digit',
+				hour12: false,
+			})
+			.replace(/(\d+)\/(\d+)\/(\d+), /, '$3-$1-$2-');
+		const filename = `authenticator-plus-backup-${date}.json`;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		URL.revokeObjectURL(url);
+		document.body.removeChild(a);
+	});
+}
+
+function restoreData() {
+	const input = document.createElement('input');
+	input.style.display = 'none';
+	input.type = 'file';
+	input.accept = '.json';
+	input.click();
+	input.addEventListener('change', async () => {
+		const file = input.files[0];
+		const reader = new FileReader();
+		reader.onload = async () => {
+			const data = JSON.parse(reader.result);
+			await chrome.storage.sync.clear();
+			await chrome.storage.sync.set(data);
+			await loadAccounts();
+		};
+		reader.readAsText(file);
+		alert('Data restored successfully.');
+	});
+
+	document.body.appendChild(input);
+}
+
+backupBtn.addEventListener('click', backupData);
+restoreBtn.addEventListener('click', restoreData);
 
 const qr = new QRCode(qrCode);
 

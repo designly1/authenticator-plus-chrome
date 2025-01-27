@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "AuthenticatorPlus",
-    "version": "1.0",
+    "version": "1.0.2",
     "description": "Improved version of Authenticator for Chrome. Scan via camera or marquee select. Accounts are encrypted and synced across devices.",
     "permissions": [
         "storage",

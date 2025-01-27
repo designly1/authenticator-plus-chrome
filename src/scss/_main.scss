@@ -78,7 +78,7 @@ input {
     position: relative;
     flex-direction: column;
     width: 100%;
-    max-width: 800px;
+    max-width: 1000px;
     margin: auto;
     padding-top: 20px;
     padding-bottom: 40px;
@@ -305,6 +305,14 @@ button {
 
         &:hover {
             background-color: #cc0000;
+        }
+    }
+
+    &-success {
+        background-color: #0f9f07;
+
+        &:hover {
+            background-color: #0a6c05;
         }
     }
 

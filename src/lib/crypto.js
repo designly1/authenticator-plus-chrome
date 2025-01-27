@@ -61,7 +61,6 @@ async function getPasswordKey() {
 				const message =
 					'No password found in local storage. Please set your encryption password in options.';
 				reject(new Error(message));
-				alert(message);
 				return;
 			}
 			const keyMaterial = await crypto.subtle.importKey(
