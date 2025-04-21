@@ -29,6 +29,53 @@ SOFTWARE.
 	<head>
 		<title>AuthenticatorPlus Options</title>
 		<link rel="stylesheet" href="../css/styles.css" />
+		<style>
+			.account-item {
+				cursor: grab;
+				display: flex;
+				align-items: center;
+				position: relative;
+				transition: transform 0.15s ease;
+			}
+			.account-item.dragging {
+				opacity: 0.5;
+				background-color: #f0f0f0;
+				z-index: 1000;
+				transform: scale(1.02);
+			}
+			.drag-handle {
+				cursor: grab;
+				margin-right: 10px;
+				opacity: 0.5;
+				padding: 5px;
+				border-radius: 4px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.drag-handle:hover {
+				opacity: 1;
+				background-color: #f0f0f0;
+			}
+			.drag-placeholder {
+				border: 2px dashed #ccc;
+				background-color: #f8f8f8;
+				height: 40px;
+				margin: 5px 0;
+				border-radius: 5px;
+			}
+			.account-item.drag-over-top {
+				border-top: 2px solid #3b82f6;
+			}
+			.account-item.drag-over-bottom {
+				border-bottom: 2px solid #3b82f6;
+			}
+			.hint-text {
+				color: #666;
+				margin-top: -5px;
+				margin-bottom: 10px;
+			}
+		</style>
 	</head>
 	<body>
 		<main>
@@ -38,7 +85,19 @@ SOFTWARE.
 			</header>
 			<div id="options-container">
 				<template id="account-template">
-					<div class="account-item">
+					<div class="account-item" draggable="true">
+						<div class="drag-handle" title="Drag to reorder">
+							<svg viewBox="0 0 24 24" width="20" height="20" fill="#666666">
+								<g>
+									<circle cx="7" cy="7" r="2" />
+									<circle cx="17" cy="7" r="2" />
+									<circle cx="7" cy="12" r="2" />
+									<circle cx="17" cy="12" r="2" />
+									<circle cx="7" cy="17" r="2" />
+									<circle cx="17" cy="17" r="2" />
+								</g>
+							</svg>
+						</div>
 						<span></span>
 						<div style="display: flex; gap: 10px">
 							<button class="delete-account">
@@ -126,9 +185,12 @@ SOFTWARE.
 
 				<div id="option-items">
 					<h1>Options</h1>
-
+					<button id="edit-btn" class="btn btn-primary btn-fit">Edit Accounts Manually</button>
 					<!-- Accounts List -->
 					<h2>Accounts</h2>
+					<p class="hint-text">
+						<small>Drag accounts to reorder them using the handle on the left</small>
+					</p>
 					<div id="accounts-list"></div>
 					<!-- End Accounts List -->
 
@@ -365,39 +427,101 @@ SOFTWARE.
 					<!-- End Button List -->
 				</div>
 				<section id="intro" class="hidden">
-					<h1>Welcome!</h1>
-					<p>
-						AuthenticatorPlus is an improvement over the original Authenticator Chrome extenstion. The
-						original extention stored stored your TOTP secrets in local storage and only allowed
-						capturing QR codes from a marquee selection tool. If you reinstalled or uninstalled the
-						extension, you would lose all your data.
-					</p>
-					<h2>AuthenticatorPlus Features</h2>
-					<ul>
-						<li>Encrypted storage of TOTP secrets</li>
-						<li>Secrets synced across all devices</li>
-						<li>Import secrets via camera</li>
-						<li>Mass import secrets from Google Authenticator</li>
-						<li>Import secrets via marquee selection tool</li>
-						<li>One-click copy of TOTP code</li>
-					</ul>
-					<h2>Getting Started</h2>
-					<ol>
-						<li>Set an encryption password</li>
-						<li>Grant camera access</li>
-						<li>Add your TOTP secrets</li>
-					</ol>
-					<h2>Website / Support</h2>
-					<p>
-						<a class="link" href="https://bit.ly/authplus" target="_blank" rel="noopener noreferrer"
-							>https://bit.ly/authplus</a
-						>
-					</p>
-					<div class="center-btn" style="max-width: 200px">
-						<button id="intro-close-btn" class="btn btn-primary">Got it!</button>
+					<div>
+						<h1>Welcome!</h1>
+						<p>
+							AuthenticatorPlus is an improvement over the original Authenticator Chrome
+							extenstion. The original extention stored stored your TOTP secrets in local storage
+							and only allowed capturing QR codes from a marquee selection tool. If you reinstalled
+							or uninstalled the extension, you would lose all your data.
+						</p>
+						<h2>AuthenticatorPlus Features</h2>
+						<ul>
+							<li>Encrypted storage of TOTP secrets</li>
+							<li>Secrets synced across all devices</li>
+							<li>Import secrets via camera</li>
+							<li>Mass import secrets from Google Authenticator</li>
+							<li>Import secrets via marquee selection tool</li>
+							<li>One-click copy of TOTP code</li>
+						</ul>
+						<h2>Getting Started</h2>
+						<ol>
+							<li>Set an encryption password</li>
+							<li>Grant camera access</li>
+							<li>Add your TOTP secrets</li>
+						</ol>
+						<h2>Website / Support</h2>
+						<p>
+							<a
+								class="link"
+								href="https://bit.ly/authplus"
+								target="_blank"
+								rel="noopener noreferrer"
+								>https://bit.ly/authplus</a
+							>
+						</p>
+						<div class="center-btn" style="max-width: 200px">
+							<button id="intro-close-btn" class="btn btn-primary">Got it!</button>
+						</div>
 					</div>
 				</section>
 			</div>
+			<section id="edit-modal" style="padding: 40px; width: 100%; max-width: 1000px; margin: auto">
+				<h2>Edit Accounts</h2>
+				<div
+					id="edit-accounts-list"
+					style="display: flex; flex-direction: column; gap: 30px; margin: 30px 0; width: 100%"
+				>
+					<template id="edit-account-template">
+						<form
+							class="edit-form"
+							style="
+								display: flex;
+								flex-direction: column;
+								gap: 15px;
+								width: 100%;
+								padding: 25px;
+								border: 1px solid #ccc;
+								border-radius: 4px;
+							"
+						>
+							<input type="hidden" class="edit-account-key" name="key" />
+							<div class="form-group">
+								<label for="edit-account-name">Account Name</label>
+								<input type="text" class="edit-account-name" name="name" required />
+							</div>
+							<div class="form-group">
+								<label for="edit-account-issuer">Issuer</label>
+								<input type="text" class="edit-account-issuer" name="issuer" />
+							</div>
+							<div class="form-group">
+								<label for="edit-account-secret">Secret</label>
+								<input type="text" class="edit-account-secret" name="secret" required />
+							</div>
+							<div style="display: flex; gap: 10px">
+								<button type="submit" class="btn btn-primary">Save</button>
+							</div>
+							<div
+								class="success-alert"
+								style="
+									display: none;
+									color: #155724;
+									background-color: #d4edda;
+									border: 1px solid #c3e6cb;
+									padding: 10px;
+									border-radius: 4px;
+									margin-top: 10px;
+								"
+							>
+								Changes saved successfully!
+							</div>
+						</form>
+					</template>
+				</div>
+				<div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px">
+					<button id="cancel-edit-btn" class="btn btn-secondary" type="button">Close</button>
+				</div>
+			</section>
 			<section id="qr-code-modal" class="hidden">
 				<div id="qr-code"></div>
 				<button class="btn btn-primary" id="close-qr-code-btn">Close</button>

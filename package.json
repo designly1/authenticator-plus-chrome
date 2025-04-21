@@ -1,11 +1,11 @@
 {
   "name": "authenticator-plus-chrome",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Improved version of Authenticator for Chrome. Supports multi-account migration from Google Authenticator, camera scan, and marquee scan from web page. Accounts are encrypted and synced across devices.",
   "license": "MIT",
   "author": {
     "name": "Jay Simons",
-    "url": "https://1337707.xyz"
+    "url": "https://yaa.bz"
   },
   "scripts": {
     "build": "webpack --config webpack.config.js",

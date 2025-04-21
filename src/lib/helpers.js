@@ -129,9 +129,9 @@ export function generateRandomString(length = 4) {
 	return result;
 }
 
-function stripAllNonAlphaNumericChars(str) {
+export function stripAllNonAlphaNumericChars(str) {
 	if (!str) return '';
-	return str.replace(/[^a-z0-9]/gi, '');
+	return str.replace(/[^a-zA-Z0-9]/g, '');
 }
 
 /**

@@ -1,0 +1,24 @@
+.form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.form-group label {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: #333;
+}
+
+.form-group input {
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 1rem;
+}
+
+.form-group input:focus {
+	outline: none;
+	border-color: #1c50b1;
+	box-shadow: 0 0 0 2px rgba(28, 80, 177, 0.1);
+}

@@ -24,9 +24,10 @@
  * SOFTWARE.
  */
 
-import { secureGetAll, secureDelete, setPassword, passwordIsSet } from '@lib/crypto';
+import { secureGetAll, secureDelete, setPassword, passwordIsSet, secureStore } from '@lib/crypto';
 import { passwordSettings } from '../constants/password';
 import generatePassword from '../lib/generate-password';
+import { stripAllNonAlphaNumericChars, generateRandomString } from '../lib/helpers';
 
 const accountsList = document.getElementById('accounts-list');
 const clearAccountsBtn = document.getElementById('clear-accounts');
@@ -51,12 +52,24 @@ const qrCode = document.getElementById('qr-code');
 const closeQrCodeBtn = document.getElementById('close-qr-code-btn');
 const restoreBtn = document.getElementById('options-restore-btn');
 const backupBtn = document.getElementById('options-backup-btn');
+const editBtn = document.getElementById('edit-btn');
+const editModal = document.getElementById('edit-modal');
+const optionsContainer = document.getElementById('options-container');
+const editAccountsList = document.getElementById('edit-accounts-list');
+const editAccountTemplate = document.getElementById('edit-account-template');
 
 const defaultReqCameraMessage = reqCameraMessage.textContent;
+
+// Keep track of account order
+let accountsOrder = [];
 
 async function loadAccounts() {
 	try {
 		const decryptedData = await secureGetAll();
+
+		// Get the account order from storage
+		const orderData = await chrome.storage.local.get('accountsOrder');
+		accountsOrder = orderData.accountsOrder || [];
 
 		// Clear and rebuild the accounts list
 		accountsList.innerHTML = '';
@@ -66,8 +79,36 @@ async function loadAccounts() {
 			return;
 		}
 
+		// Prepare accounts for display
+		let accountsToDisplay = [];
+
+		// First add accounts in the saved order
+		for (const key of accountsOrder) {
+			if (decryptedData[key]) {
+				accountsToDisplay.push({
+					key,
+					account: decryptedData[key],
+				});
+				delete decryptedData[key];
+			}
+		}
+
+		// Then add any accounts not in the order (new accounts)
 		for (const [key, account] of Object.entries(decryptedData)) {
+			accountsToDisplay.push({
+				key,
+				account,
+			});
+		}
+
+		// Update the order with the final list of keys
+		accountsOrder = accountsToDisplay.map(item => item.key);
+		await chrome.storage.local.set({ accountsOrder });
+
+		// Now create the DOM elements
+		for (const { key, account } of accountsToDisplay) {
 			const clone = accountTemplate.content.cloneNode(true);
+			const accountItem = clone.querySelector('.account-item');
 			const span = clone.querySelector('span');
 			const deleteButton = clone.querySelector('button.delete-account');
 			const qrButton = clone.querySelector('button.show-qr');
@@ -80,11 +121,15 @@ async function loadAccounts() {
 			qrButton.dataset.secret = account.secret;
 			qrButton.dataset.issuer = account.issuer;
 
+			// Add data attribute for drag and drop
+			accountItem.dataset.key = key;
+
 			accountsList.appendChild(clone);
 		}
 
 		bindDeleteButtons();
 		bindShowQrButtons();
+		bindDragAndDrop();
 	} catch (error) {
 		console.error('Failed to load accounts:', error);
 		accountsList.innerHTML =
@@ -177,6 +222,125 @@ closeQrCodeBtn.addEventListener('click', () => {
 	qrCodeModal.classList.add('hidden');
 });
 
+// Function to handle drag and drop events
+function bindDragAndDrop() {
+	const accountItems = accountsList.querySelectorAll('.account-item');
+
+	// No accounts or only one account? No need for dragging
+	if (accountItems.length <= 1) return;
+
+	let draggedItem = null;
+
+	// Enable drag on each account item
+	accountItems.forEach(item => {
+		// Drag start - when user starts dragging an item
+		item.addEventListener('dragstart', e => {
+			draggedItem = item;
+			e.dataTransfer.setData('text/plain', item.dataset.key); // Required for Firefox
+			e.dataTransfer.effectAllowed = 'move';
+
+			// Add a delay to apply the dragging class (helps with rendering)
+			setTimeout(() => {
+				item.classList.add('dragging');
+			}, 0);
+		});
+
+		// Drag end - when user stops dragging
+		item.addEventListener('dragend', () => {
+			item.classList.remove('dragging');
+			draggedItem = null;
+
+			// Reset all potential drop positions
+			document.querySelectorAll('.account-item').forEach(item => {
+				item.classList.remove('drag-over-top');
+				item.classList.remove('drag-over-bottom');
+			});
+		});
+	});
+
+	// Make the container accept drops
+	accountsList.addEventListener('dragover', e => {
+		e.preventDefault(); // Allow dropping
+		e.dataTransfer.dropEffect = 'move';
+
+		if (!draggedItem) return;
+
+		// Find the item we're dragging over
+		const target = e.target.closest('.account-item');
+		if (!target || target === draggedItem) return;
+
+		// Determine if we're in the top or bottom half of the target
+		const rect = target.getBoundingClientRect();
+		const midY = rect.top + rect.height / 2;
+		const isAbove = e.clientY < midY;
+
+		// Clear previous visual indicators
+		document.querySelectorAll('.account-item').forEach(item => {
+			if (item !== target) {
+				item.classList.remove('drag-over-top');
+				item.classList.remove('drag-over-bottom');
+			}
+		});
+
+		// Add visual indicator for drop position
+		if (isAbove) {
+			target.classList.add('drag-over-top');
+			target.classList.remove('drag-over-bottom');
+		} else {
+			target.classList.add('drag-over-bottom');
+			target.classList.remove('drag-over-top');
+		}
+	});
+
+	// Handle the actual drop
+	accountsList.addEventListener('drop', e => {
+		e.preventDefault();
+
+		// Find the target item we're dropping onto
+		const target = e.target.closest('.account-item');
+		if (!target || target === draggedItem || !draggedItem) return;
+
+		// Determine where to insert the dragged item
+		const rect = target.getBoundingClientRect();
+		const midY = rect.top + rect.height / 2;
+		const isAbove = e.clientY < midY;
+
+		// Insert the dragged item
+		if (isAbove) {
+			accountsList.insertBefore(draggedItem, target);
+		} else {
+			accountsList.insertBefore(draggedItem, target.nextSibling);
+		}
+
+		// Remove all visual indicators
+		document.querySelectorAll('.account-item').forEach(item => {
+			item.classList.remove('drag-over-top');
+			item.classList.remove('drag-over-bottom');
+		});
+
+		// Save the new order
+		updateAccountsOrder();
+	});
+
+	// Clear visual indicators when dragging leaves an item
+	accountsList.addEventListener('dragleave', e => {
+		const target = e.target.closest('.account-item');
+		if (target) {
+			target.classList.remove('drag-over-top');
+			target.classList.remove('drag-over-bottom');
+		}
+	});
+}
+
+// Update the order of accounts in storage
+async function updateAccountsOrder() {
+	const accountItems = accountsList.querySelectorAll('.account-item');
+	accountsOrder = Array.from(accountItems).map(item => item.dataset.key);
+
+	await chrome.storage.local.set({ accountsOrder });
+}
+
+// When deleting an account, also remove it from the order
 async function confirmDeleteAccount(event) {
 	const button = event.target.closest('button.delete-account');
 	if (!button) return;
@@ -187,6 +351,14 @@ async function confirmDeleteAccount(event) {
 	if (confirm(`Are you sure you want to delete ${name}?`)) {
 		try {
 			await secureDelete(key);
+
+			// Also remove from order
+			const index = accountsOrder.indexOf(key);
+			if (index !== -1) {
+				accountsOrder.splice(index, 1);
+				await chrome.storage.local.set({ accountsOrder });
+			}
+
 			await loadAccounts();
 		} catch (error) {
 			console.error('Failed to delete account:', error);
@@ -201,9 +373,12 @@ async function confirmDeleteAllAccounts() {
 	}
 }
 
+// When clearing all accounts, also clear the order
 async function deleteAllAccounts() {
 	try {
 		await chrome.storage.sync.clear();
+		accountsOrder = [];
+		await chrome.storage.local.set({ accountsOrder });
 		await loadAccounts();
 	} catch (error) {
 		console.error('Failed to delete all data:', error);
@@ -227,6 +402,26 @@ const confirmChangePassword = async () => {
 		passwordIsSetContainer.classList.add('hidden');
 	}
 };
+
+const toggleEditModal = () => {
+	editModal.classList.toggle('show');
+	optionsContainer.classList.toggle('hidden');
+
+	// If we're showing the modal, populate the accounts
+	if (editModal.classList.contains('show')) {
+		populateEditForms();
+	}
+};
+
+// Remove the initial call to toggleEditModal since we don't want to show the modal on page load
+// toggleEditModal();
+
+editBtn.addEventListener('click', toggleEditModal);
+
+// Make sure we remove any existing event listener before adding a new one
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
+cancelEditBtn.removeEventListener('click', toggleEditModal);
+cancelEditBtn.addEventListener('click', toggleEditModal);
 
 clearAccountsBtn.addEventListener('click', confirmDeleteAllAccounts);
 
@@ -362,3 +557,111 @@ passwordIsSet().then(isSet => {
 		passwordFormContainer.classList.remove('hidden');
 	}
 });
+
+async function populateEditForms() {
+	try {
+		const decryptedData = await secureGetAll();
+		editAccountsList.innerHTML = ''; // Clear existing forms
+
+		// Get accounts in the correct order
+		const orderData = await chrome.storage.local.get('accountsOrder');
+		const accountsOrder = orderData.accountsOrder || [];
+
+		// Prepare accounts for display
+		let accountsToDisplay = [];
+
+		// First add accounts in the saved order
+		for (const key of accountsOrder) {
+			if (decryptedData[key]) {
+				accountsToDisplay.push({
+					key,
+					account: decryptedData[key],
+				});
+				delete decryptedData[key];
+			}
+		}
+
+		// Then add any accounts not in the order
+		for (const [key, account] of Object.entries(decryptedData)) {
+			accountsToDisplay.push({
+				key,
+				account,
+			});
+		}
+
+		// Create edit forms for each account
+		for (const { key, account } of accountsToDisplay) {
+			const clone = editAccountTemplate.content.cloneNode(true);
+			const form = clone.querySelector('form');
+			const keyInput = clone.querySelector('.edit-account-key');
+			const nameInput = clone.querySelector('.edit-account-name');
+			const issuerInput = clone.querySelector('.edit-account-issuer');
+			const secretInput = clone.querySelector('.edit-account-secret');
+
+			keyInput.value = key;
+			nameInput.value = account.name;
+			issuerInput.value = account.issuer || '';
+			secretInput.value = account.secret;
+
+			// Add form submit handler
+			form.addEventListener('submit', async e => {
+				e.preventDefault();
+
+				const updatedAccount = {
+					name: nameInput.value.trim(),
+					issuer: issuerInput.value.trim(),
+					secret: secretInput.value.trim(),
+				};
+
+				// Validate required fields
+				if (!updatedAccount.name || !updatedAccount.secret) {
+					alert('Name and Secret are required fields.');
+					return;
+				}
+
+				try {
+					// Generate new key based on updated issuer and name
+					const issuerPart =
+						stripAllNonAlphaNumericChars(updatedAccount.issuer) || generateRandomString();
+					const namePart = stripAllNonAlphaNumericChars(updatedAccount.name);
+					const newKey = `account_${issuerPart}_${namePart}`;
+
+					// If the key has changed, we need to delete the old one and create a new one
+					if (newKey !== key) {
+						await secureDelete(key);
+						// Update the order array
+						const index = accountsOrder.indexOf(key);
+						if (index !== -1) {
+							accountsOrder[index] = newKey;
+							await chrome.storage.local.set({ accountsOrder });
+						}
+					}
+
+					// Save the updated account
+					await secureStore(newKey, updatedAccount);
+					console.log('Account saved successfully:', updatedAccount);
+
+					// Show success alert
+					const successAlert = form.querySelector('.success-alert');
+					successAlert.style.display = 'block';
+
+					// Wait for the alert to be shown before refreshing
+					setTimeout(async () => {
+						successAlert.style.display = 'none';
+						// Refresh the accounts list and forms after the alert is hidden
+						await loadAccounts();
+						await populateEditForms();
+					}, 3000);
+				} catch (error) {
+					console.error('Failed to save account:', error);
+					alert('Failed to save account. Please try again.');
+				}
+			});
+
+			editAccountsList.appendChild(clone);
+		}
+	} catch (error) {
+		console.error('Failed to populate edit forms:', error);
+		alert('Failed to load accounts for editing. Please try again.');
+	}
+}

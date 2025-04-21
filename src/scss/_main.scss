@@ -82,10 +82,14 @@ input {
     margin: auto;
     padding-top: 20px;
     padding-bottom: 40px;
+
+    &.hidden {
+        display: none;
+    }
 }
 
 #intro {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background-color: white;
     display: flex;
@@ -93,9 +97,16 @@ input {
     gap: 10px;
     padding: 20px;
     font-size: medium;
+    overflow-y: auto;
 
     &.hidden {
         display: none;
+    }
+
+    &>div {
+        width: 100%;
+        max-width: 1200px;
+        margin: auto;
     }
 }
 
@@ -612,5 +623,17 @@ button {
 
     100% {
         opacity: 0.3;
+    }
+}
+
+#edit-modal {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+
+    &.show {
+        display: flex;
     }
 }
